@@ -21,26 +21,41 @@ This pipeline is particularly suited for studies aiming to:
 **TEffectBayes** includes a comprehensive pipeline that contains several processing steps to integrate regulatory elements obtained from different multi-omic data. These steps are as follows:
 
 **1. STAR_GENOMEGENERATE :** Generates genome indices from the reference FASTA and GTF files for STAR alignment.
+
 **2. STAR_ALIGN :** Aligns RNA-seq FASTQ reads to the indexed genome using the STAR aligner.
+
 **3. SAMTOOLS_SORT :** Sorts STAR-aligned BAM files to prepare for downstream quantification.
+
 **4. featureCountsR :** Quantifies gene expression using featureCountsR and creates required input tables for following integration steps.
+
 **5. salmonTE_quant :** Estimates TE expression from RNA-seq reads using SalmonTE.
+
 **6. locus_quant :** Aggregates expression estimates at repeat loci from family level quantification abundance of salmonTE output.
+
 **7. locus_interval_prep :** Converts quantified repeat loci into BED interval formats for overlap analysis.
+
 **8. histone_count_prep :** Prepares histone signal count matrices across all samples for downstream merging. 
+
 **9. histone_interval_prep :** Prepares histone intervals across all samples for downstream merging.
+
 **10. gene_histone_intersection :** Uses BEDTools and pybedtools to intersect gene regions with histone marks.
+
 **11. repeat_histone_intersection :** Uses BEDTools and pybedtools to intersect TE regions with histone marks.
+
 **12. repeat_gene_intersection :**
 1. gene_repeat_intervals : Used for creating TE and gene regions interval bed files required for intersect analysis.
 2. BEDTOOLS_INTERSECT : Uses BEDTools to intersect gene regions with TE regions.
+
 **13. BNM_INPUT_PREP :**
 1. BNM_INPUT_PREP_STEP1 : Transforms the initial gene, TE intersection and creates it initial input files required for bayesian network analysis.
 2. BNM_INPUT_PREP_STEP2 : Further transforms the input based on biological condition groups.
 3. BNM_INPUT_PREP_STEP3 : Performs a merging to detect overlapping histone-repeat couples with the main input files.
 4. BNM_INPUT_PREP_STEP4 : Creates gene input tables from the main input file.
+
 **14. BNM_CALCULATION :** Performs Bayesian Network model and creates regulatory model per gene.
+
 **15. BNM_INFERENCE :** Performs the Bayesian Inference of the regulatory network per gene.
+
 **16. BNM_VISUALIZATION :** Generates graphical representations of inferred networks.
 
 ---
