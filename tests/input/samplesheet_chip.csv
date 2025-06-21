@@ -1,0 +1,3 @@
+feature_counts,annotation,antibody
+tests/data/K27me3_counts.txt,tests/data/K27me3_annotatePeaks.txt,K27me3
+tests/data/K4me3_counts.txt,tests/data/K4me3_annotatePeaks.txt,K4me3

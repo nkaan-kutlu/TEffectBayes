@@ -1,0 +1,5 @@
+sample,fastq_1,fastq_2,condition,cell_line
+sample1,tests/data/sample1.fastq.gz,,normal,MCF10A
+sample2,tests/data/sample2.fastq.gz,,normal,MCF10A
+sample3,tests/data/sample3.fastq.gz,,cancer,MCF7
+sample4,tests/data/sample4.fastq.gz,,cancer,MCF7
