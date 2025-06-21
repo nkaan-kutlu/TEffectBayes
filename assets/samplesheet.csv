@@ -1,0 +1,4 @@
+sample,fastq_1,fastq_2,condition,cell_line
+sample1,data/sample1_R1.fastq.gz,data/sample1_R2.fastq.gz,treatment,MCF10A
+sample2,data/sample2_R1.fastq.gz,data/sample2_R2.fastq.gz,control,MCF7
+sample3,data/sample3_R1.fastq.gz,,control,MCF7

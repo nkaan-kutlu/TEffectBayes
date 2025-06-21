@@ -1,0 +1,14 @@
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - r-base=4.2
+  - r-optparse
+  - r-stringr
+  - r-tidyr
+  - r-dplyr
+  - r-purrr
+  - bioconductor-rtracklayer
+  - r-readr  
+  - r-data.table

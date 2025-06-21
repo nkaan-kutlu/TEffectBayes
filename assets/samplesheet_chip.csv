@@ -1,0 +1,4 @@
+feature_counts,annotation,antibody
+data/K27me3.consensus_peaks.featureCounts.txt,data/K27me3.consensus_peaks.annotatePeaks.txt,K27me3
+data/K4me3.consensus_peaks.featureCounts.txt,data/K4me3.consensus_peaks.annotatePeaks.txt,K4me3
+data/K9ac.consensus_peaks.featureCounts.txt,data/K9ac.consensus_peaks.annotatePeaks.txt,K9ac
