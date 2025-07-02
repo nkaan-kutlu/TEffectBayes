@@ -253,5 +253,7 @@ These inference outputs can be used to:
 ## BNM_VISUALIZATION
 In this final step, each gene's inferred network is rendered as a graphical model using the structure learned in the previous step. Directed edges represent probabilistic dependencies between features and the target gene, and edge weights reflect the strength of those relationships. For each gene, a PDF figure is generated that displays all relevant regulatory nodes, the directional edges and network topology. These visualizations aid in interpreting the regulatory architecture for each gene and identifying feature connectivity patterns across cell types and conditions.
 
-To cite this pipeline please use: 
+## 📖 How to Cite
+
+If you use this pipeline in your research, please cite:
 [![DOI](https://zenodo.org/badge/1006201161.svg)](https://doi.org/10.5281/zenodo.15791261)
