@@ -11,6 +11,8 @@ process BNM_CALCULATION {
     path samplesheet
     path samplesheet_chip
     path bnm_gene_input_pickles
+	val  n_bins
+    val  bin_strategy
     
     output:
     path "BNM/calculations/*.pkl", emit: gene_model_pickles
@@ -122,7 +124,7 @@ process BNM_CALCULATION {
                                             bw_list_method='List', white_list=white_list, black_list=black_list, fixed_edges=fixed)        
                        
             # Discretize data
-            discretizer = KBinsDiscretizer(n_bins=2, encode='ordinal', strategy='uniform')
+            discretizer = KBinsDiscretizer(n_bins=int(${n_bins}), encode='ordinal', strategy='${bin_strategy}')
             discretized_data = discretizer.fit_transform(bootstrapped_df.drop(columns=['biological_condition']))
             discretized_df = pd.DataFrame(discretized_data, columns=bootstrapped_df.columns[:-1])
             discretized_df['biological_condition'] = bootstrapped_df['biological_condition'].values

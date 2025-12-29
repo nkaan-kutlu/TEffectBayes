@@ -17,6 +17,8 @@ if (params.help) {
     --fasta              fasta file if genome is not specified  
     --genelist           target genelist can be provided if desired
     --interval           the genomic range for the gene upstream region dafault: 5000 kb
+	--bnm_n_bins         number of bins for discretization (default: 2)
+    --bnm_bin_strategy   discretization strategy: uniform | quantile | kmeans (default: uniform)
    """
     exit 1
 }
@@ -72,6 +74,14 @@ params.replicate_count  = params.replicate_count ?: null
 params.interval         = params.interval ?: null
 params.genelist         = params.genelist ?: null
 params.outdir           = params.outdir ?: "results"
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    BNM DISCRETIZATION PARAMETERS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+params.bnm_n_bins       = params.bnm_n_bins ?: 2
+params.bnm_bin_strategy = params.bnm_bin_strategy ?: 'uniform'
 
 workflow {
     if (!params.input) error "ERROR: Input samplesheet must be provided with --input"
@@ -206,8 +216,8 @@ workflow {
 
     bnm_gene_input_pickles_ch = BNM_INPUT_PREP_STEP4(samplesheet: file(params.input),samplesheet_chip: file(params.input_chip),bnm_input_pickles_ch)
 
-    bnm_calc_ch = BNM_CALCULATION(samplesheet: file(params.input),samplesheet_chip: file(params.input_chip),bnm_gene_input_pickles_ch)
-
+    bnm_calc_ch = BNM_CALCULATION(samplesheet: file(params.input),samplesheet_chip: file(params.input_chip),bnm_gene_input_pickles_ch, params.bnm_n_bins,params.bnm_bin_strategy)
+	
     bnm_inf_ch = BNM_INFERENCE(bnm_calc_ch)
 
     bnm_visual_ch = BNM_VISUALIZATION(bnm_calc_ch)
