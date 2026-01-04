@@ -62,7 +62,5 @@ process histone_count_prep {
     output_file = os.path.join(output_dir, f"{antibody}_counttable.csv")
     expanded_chipseq.to_csv(output_file, index=False)
     EOF
-
-    python3 --version | awk '{print $2}' > versions.yml
     """
 }

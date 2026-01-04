@@ -54,11 +54,5 @@ process histone_interval_prep {
         output_file = os.path.join(output_dir, f"{sample}_${antibody}_intervals.csv")
         df_sample.to_csv(output_file, index=False)
     EOF
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: $(python --version 2>&1 | awk '{print $2}')
-        pandas: $(python -c "import pandas as pd; print(pd.__version__)")
-    END_VERSIONS
     """
 }

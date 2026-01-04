@@ -10,8 +10,7 @@ process locus_interval_prep {
     input:
     path te_counttable
     path samplesheet
-    path outdir
-
+	
     output:
     path "TE_intervals/*_TE_intervals.csv", emit: te_intervals
 

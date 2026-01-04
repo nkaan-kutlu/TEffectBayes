@@ -33,11 +33,17 @@ TEffectBayes pipeline
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 include { validateInputParameters  } from './subworkflows/local/utils_teffectbayes_pipeline'
+include { getGenomeAttribute  } from './subworkflows/local/utils_teffectbayes_pipeline'
+include { genomeExistsError  } from './subworkflows/local/utils_teffectbayes_pipeline'
+include { validateInputSamplesheet  } from './subworkflows/local/utils_teffectbayes_pipeline'
+include { validateInputSalmonTESamplesheet  } from './subworkflows/local/utils_teffectbayes_pipeline'
+include { validateInputChIPSamplesheet  } from './subworkflows/local/utils_teffectbayes_pipeline'
+include { validateRepeatGtf  } from './subworkflows/local/utils_teffectbayes_pipeline'
 
 include { STAR_GENOMEGENERATE } from './modules/star/genomegenerate/main.nf'
 include { STAR_ALIGN } from './modules/star/align/main.nf'
 include { SAMTOOLS_SORT } from './modules/samtools/sort/main.nf'
-include { featureCountsR } from './modules/rsubread/featureconts/main.nf'
+include { featureCountsR } from './modules/rsubread/featurecounts/main.nf'
 
 include { salmonTE_quant } from './modules/salmonTE/quant/main.nf'
 include { locus_quant } from './modules/salmonTE/locus_quant/main.nf'
@@ -46,7 +52,7 @@ include { locus_interval_prep } from './modules/salmonTE/locus_interval_prep/mai
 include { histone_count_prep } from './modules/chip_process/histone_count_prep/main.nf'
 include { histone_interval_prep } from './modules/chip_process/histone_interval_prep/main.nf'
 
-include { gene_histone_intersection } from './modules/data_integration/gene_histone/main.nf'
+include { gene_histone_intersection as chip_rna } from './modules/data_integration/gene_histone/main.nf'
 include { repeat_histone_intersection } from './modules/data_integration/repeat_histone/main.nf'
 include { gene_repeat_intervals } from './modules/data_integration/gene_repeat/gene_repeat_intervals/main.nf'
 include { BEDTOOLS_INTERSECT } from './modules/data_integration/gene_repeat/bedtools/intersect/main.nf'
@@ -90,26 +96,58 @@ workflow {
     if (!params.repeat) error "ERROR: Please provide a repeat GTF file using --repeat"
     if (!params.genome && (!params.fasta || !params.gtf)) {exit 1, "You must specify either --genome or both --fasta and --gtf"}
 
-    // Validate general input parameters
+    // -------------------------------------------------------------------------
+    // LOAD SAMPLESHEETS AS ROW CHANNELS
+    // -------------------------------------------------------------------------
+
+    // RNA-seq samplesheet
+    samplesheet_rows_ch = Channel.fromPath(params.input)
+        .splitCsv(header:true, sep:",")
+        .map { row -> row }
+
+    // SalmonTE samplesheet
+    salmonTE_rows_ch = Channel.fromPath(params.input)
+        .splitCsv(header:true, sep:",")
+        .map { row -> row }
+
+    // ChIP-seq samplesheet
+    chip_rows_ch = Channel.fromPath(params.input_chip)
+        .splitCsv(header:true, sep:",")
+        .map { row -> row }
+
+    // -------------------------------------------------------------------------
+    // VALIDATE INPUT PARAMETERS
+    // -------------------------------------------------------------------------
     validateInputParameters()
 
-    // Load genome attribute files
+    // -------------------------------------------------------------------------
+    // CREATE CHANNELS FOR WORKFLOW
+    // -------------------------------------------------------------------------
+
+    // RNA-seq channel for STAR / featureCounts
+    samplesheet_ch = samplesheet_rows_ch
+        .map { row -> tuple(row.sample, [row.fastq_1, row.fastq_2], row.condition, row.cell_line) }
+
+    // SalmonTE channel
+    salmonTE_samplesheet_ch = salmonTE_rows_ch
+        .map { row ->
+            def fastq_files = []
+            if (row.fastq_1) fastq_files << row.fastq_1
+            if (row.fastq_2) fastq_files << row.fastq_2
+            tuple(row.sample, fastq_files)
+        }
+
+    // ChIP-seq channel
+    chip_samplesheet_ch = chip_rows_ch
+        .map { row -> tuple(row.antibody, row.feature_counts, row.annotation) }
+	
+	// -------------------------------------------------------------------------
+    // LOAD GENOME & REPEAT FILES
+    // -------------------------------------------------------------------------
     genome_fasta_ch = Channel.fromPath(getGenomeAttribute('fasta')).map { [null, it] }
     genome_gtf_ch   = Channel.fromPath(getGenomeAttribute('gtf')).map { [null, it] }
-    repeat_gtf_ch = Channel.value(params.repeat).map { validateRepeatGtf(it) }
+    repeat_gtf_ch = Channel.value(validateRepeatGtf(params.repeat))
 
-    // Loading the samplesheets to validate and create channels
-    samplesheet_ch = Channel.fromPath(params.input)
-        .splitCsv(header: true, sep: ",")
-        .map { row -> validateInputSamplesheet(row) }
-
-    salmonTE_samplesheet_ch = Channel.fromPath(params.input)
-        .splitCsv(header: true, sep: ",")
-        .map { row -> validateInputSalmonTESamplesheet(row) }
-
-    chip_samplesheet_ch = Channel.fromPath(params.input_chip)
-        .splitCsv(header: true, sep: ",")
-        .map { row -> validateInputChIPSamplesheet(row) }
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -118,12 +156,30 @@ workflow {
     */
 
     star_index_ch = STAR_GENOMEGENERATE(genome_fasta_ch, genome_gtf_ch)
+	
+	aligned_bam_ch = STAR_ALIGN(samplesheet_ch, star_index_ch, genome_gtf_ch, false)
+	
+	bam_emitted_ch = aligned_bam_ch.bam
+	
+	bam_for_sort_ch = bam_emitted_ch
+		.map { meta, bam_files ->
+			def bam = bam_files.find { it.name.endsWith("d.out.bam") }
+			if (!bam) error "No BAM file ending with 'd.out.bam' found for sample: $meta.id"
+			tuple(meta, bam)
+		}
+	
+    sorted_bam_ch = SAMTOOLS_SORT(bam_for_sort_ch, genome_fasta_ch)
+	
+	featurecounts_input_ch = sorted_bam_ch
+			
+	bam_for_fc_ch = featurecounts_input_ch.bam
+		.map { meta, bam_files ->
+			def bam = bam_files.find { it.name.endsWith(".bam") }
+			if (!bam) error "No BAM file found for sample: $meta.id"
+			tuple(meta, bam)
+		}
 
-    aligned_bam_ch = STAR_ALIGN(samplesheet_ch, star_index_ch, genome_gtf_ch)
-
-    sorted_bam_ch = SAMTOOLS_SORT(aligned_bam_ch, genome_fasta_ch)
-
-    gene_quant_ch = featureCountsR(sorted_bam_ch, genome_gtf_ch)
+    gene_quant_ch = featureCountsR(bam_for_fc_ch, genome_gtf_ch)
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -161,21 +217,13 @@ workflow {
         Data Integration
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
-
-    chip_csvs = Channel.fromPath("${params.outdir}/histone_quant/*_counttable.csv")
-
-    gene_histone_out_ch = gene_histone_intersection(
-        genes_counttable: file("${params.outdir}/gene_quant/genes_counttable.csv"),
-        chip_counttables: chip_csvs,
-        samplesheet: file(params.input),
-        genelist: params.genelist ? file(params.genelist) : null
-    )
-
-    repeat_histone_ch = repeat_histone_intersection(
-        repeat_intervals: te_intervals_ch,
-        chip_intervals: chip_intervals_ch,
-        samplesheet: file(params.input)
-    )
+	
+	gene_histone_out_ch = chip_rna(
+		file("${params.outdir}/gene_quant/genes_counttable.csv"),
+		Channel.fromPath("${params.outdir}/histone_quant/*_counttable.csv"),
+		file(params.input),
+		params.genelist ? file(params.genelist) : null
+	)
 
     gene_repeat_beds_ch = gene_repeat_intervals(
         gene_histone_counttable: gene_histone_out_ch,

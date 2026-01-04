@@ -3,12 +3,12 @@
 //
 
 def validateInputParameters() {
-    getGenomeAttribute ()
     genomeExistsError()
-    validateInputSamplesheet()
-    validateInputSalmonTESamplesheet()
-    validateInputChIPSamplesheet()
-    validateRepeatGtf()
+    validateRepeatGtf(params.repeat)
+    
+    if (!params.genome && (!params.fasta || !params.gtf)) {
+        error "You must specify either --genome or both --fasta and --gtf"
+    }
 }
 
 //
@@ -45,53 +45,47 @@ def genomeExistsError() {
 //
 // Validate channels from input samplesheet
 //
-def validateInputSamplesheet(input) {
-    def (metas, fastqs) = input[1..2]
-
-    // Check that multiple runs of the same sample are of the same datatype i.e. single-end / paired-end
-    def endedness_ok = metas.collect{ meta -> meta.single_end }.unique().size == 1
-    if (!endedness_ok) {
-        error("Please check input samplesheet -> Multiple runs of a sample must be of the same datatype i.e. single-end or paired-end: ${metas[0].id}")
+def validateInputSamplesheet(row) {
+    if (row == null || row.sample == null) {
+        error "Invalid RNA-seq samplesheet row: ${row}"
     }
-
-    return [ metas[0], fastqs ]
+    def fastq_files = []
+    if (row.fastq_1) fastq_files << row.fastq_1
+    if (row.fastq_2) fastq_files << row.fastq_2
+    return tuple(row.sample, fastq_files, row.condition, row.cell_line)
 }
 
+
 //
-// Validate the samplesheet channle for salmonTE process
+// Validate the samplesheet channel for salmonTE process
 //
-def validateInputSalmonTESamplesheet(input) {
-    def sample_id = row.sample
-    def fastq_files = row.fastq_2 ? [file(row.fastq_1), file(row.fastq_2)] : [file(row.fastq_1)]
-    return tuple(sample_id, fastq_files)
+def validateInputSalmonTESamplesheet(row) {
+    if (row == null || row.sample == null) {
+        error "Invalid SalmonTE samplesheet row: ${row}"
+    }
+    def fastq_files = []
+    if (row.fastq_1) fastq_files << file(row.fastq_1)
+    if (row.fastq_2) fastq_files << file(row.fastq_2)
+    return tuple(row.sample, fastq_files)
 }
 
 //
 // Validate channels from chip samplesheet
 //
-def validateInputChIPSamplesheet(input_chip) {
-     def (row) = input_chip
+def validateInputChIPSamplesheet(row) {
     if (!row.antibody || !row.feature_counts || !row.annotation) {
-        error "ERROR: Missing required column(s) for sample ${row.antibody}. All columns (antibody, feature_counts, annotation) must be provided."
+        error "Missing required columns for ChIP sample: ${row}"
     }
-
-    // Check for the count and annotation files
-    if (!file(row.feature_counts).exists()) {
-        error "ERROR: Feature counts file not found for sample ${row.antibody} at path: ${row.feature_counts}"
-    }
-
-    if (!file(row.annotation).exists()) {
-        error "ERROR: Annotation file not found for sample ${row.antibody} at path: ${row.annotation}"
-    }
-
-    return [ row.antibody, file(row.feature_counts), file(row.annotation) ]
+    if (!file(row.feature_counts).exists()) error "Feature counts not found for ${row.antibody}"
+    if (!file(row.annotation).exists()) error "Annotation not found for ${row.antibody}"
+    return tuple(row.antibody, file(row.feature_counts), file(row.annotation))
 }
 
 //
 // Validate repeat gtf
 //
 def validateRepeatGtf(path_str) {
-    def f = file(path_str)
+    def f = file("${workflow.projectDir}/${path_str}")
     if (!f.exists()) {
         error "ERROR: repeat GTF file not found at path: ${path_str}"
     }

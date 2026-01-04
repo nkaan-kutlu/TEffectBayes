@@ -9,22 +9,21 @@ process gene_histone_intersection {
 
     input:
     path genes_counttable         
-    path histone_counttable         
+    path histone_counttables
     path samplesheet
-    path genelist optional true       
+    path genelist optional true  
 
     output:
     path "Data_Integration/gene_histone_counttable.csv", emit: gene_histone_counttable
-
-    environment:
-    interval = params.interval ?: 5000
-    genelist_path = "${params.genelist ?: ''}"
 
     script:
     """
     python <<EOF
     import os
     import pandas as pd
+	
+	interval = params.interval ?: 5000
+    genelist_path = "${params.genelist ?: ''}"
 
     output_dir = "Data_Integration"
     os.makedirs(output_dir, exist_ok=True)
@@ -52,7 +51,7 @@ process gene_histone_intersection {
     df_gene["cell_line"] = df_gene["sample"].map(sample_map)
 
     # Read ChIP tables
-    chip_dir = os.path.dirname("${histone_counttable}")
+    chip_dir = os.path.dirname("${histone_counttables}")
     chip_files = [os.path.join(chip_dir, f) for f in os.listdir(chip_dir) if f.endswith("_counttable.csv")]
 
     final_df = df_gene.copy()

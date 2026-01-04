@@ -8,7 +8,6 @@ process salmonTE_quant {
 
     input:
     tuple val(sample_id), path(fastq_files)
-    path outdir
 
     output:
     path "TE_quant/", emit: quant_dirs
