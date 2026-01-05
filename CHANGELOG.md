@@ -2,7 +2,7 @@
 
 All notable changes to **TEffectBayes** will be documented in this file.
 
-## [1.1.0] - 2025-12-29
+## [1.1.0] - 2026-01-05
 
 ### Added
 - User-configurable discretization parameters for Bayesian Network Modeling:
@@ -13,6 +13,7 @@ All notable changes to **TEffectBayes** will be documented in this file.
 ### Changed
 - Bayesian Network discretization step no longer uses hard-coded parameters.
 - Improved reproducibility and transparency of Bayesian model learning.
+- test.config has been updated and both main.nf file and the nf files of some of the module errors based on test data is corrected.
 
 ## [1.0.0] - 2025-07-02
 ### Added
