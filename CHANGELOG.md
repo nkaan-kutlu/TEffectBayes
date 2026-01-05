@@ -13,7 +13,8 @@ All notable changes to **TEffectBayes** will be documented in this file.
 ### Changed
 - Bayesian Network discretization step no longer uses hard-coded parameters.
 - Improved reproducibility and transparency of Bayesian model learning.
-- test.config has been updated and both main.nf file and the nf files of some of the module errors based on test data is corrected.
+- test.config has been updated 
+- main.nf of the pipeline and the main.nf files of Preprocessing stage module errors based on the new test.config were corrected.
 
 ## [1.0.0] - 2025-07-02
 ### Added
