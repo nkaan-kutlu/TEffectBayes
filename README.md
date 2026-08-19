@@ -255,6 +255,16 @@ In this final step, each gene's inferred network is rendered as a graphical mode
 
 ## 📖 How to Cite
 
-If you use this pipeline in your research, please cite:
+If you use TEffectBayes in your research, please cite the following publication:
 
-[![DOI](https://zenodo.org/badge/1006201161.svg)](https://doi.org/10.5281/zenodo.15791261)
+**Research article**
+
+Kutlu, N.K., Güner, H. & Karakülah, G. (2026). TEffectBayes: a Nextflow pipeline for exploring the potential effect of transposable elements in gene regulatory network with multi-omic Bayesian network model. *Molecular Genetics and Genomics*, 301, 61.
+
+[![Paper DOI](https://img.shields.io/badge/DOI-10.1007%2Fs00438--026--02365--8-blue)](https://doi.org/10.1007/s00438-026-02365-8)
+
+**Software**
+
+The TEffectBayes pipeline is also archived on Zenodo:
+
+[![Zenodo DOI](https://zenodo.org/badge/1006201161.svg)](https://doi.org/10.5281/zenodo.15791261)
